@@ -1,3 +1,37 @@
+const escapeCodes = {
+	Reset: '\x1b[0m',
+	Black: '\x1b[30m',
+	Red: '\x1b[31m',
+	Green: '\x1b[32m',
+	Yellow: '\x1b[33m',
+	Blue: '\x1b[34m',
+	Magenta: '\x1b[35m',
+	Cyan: '\x1b[36m',
+	White: '\x1b[37m',
+	BrightBlack: '\x1b[90m',
+	BrightRed: '\x1b[91m',
+	BrightGreen: '\x1b[92m',
+	BrightYellow: '\x1b[93m',
+	BrightBlue: '\x1b[94m',
+	BrightMagenta: '\x1b[95m',
+	BrightCyan: '\x1b[96m',
+	BrightWhite: '\x1b97m',
+	Bell: '\u0007',
+	ClearLine: '\u001b[2K',
+	LineFeed: '\u001b[G',
+	NewLine: '\n',
+	ResetBasic: '\r',
+	Tab: '\t',
+	ArrowUp: '\u001b[A',
+	ArrowDown: '\u001b[B',
+	ArrowRight: '\u001b[C',
+	ArrowLeft: '\u001b[D',
+	ControlC: '\u0003',
+	ControlS: '\u0013',
+	Backspace: '\u0008',
+	Delete: '\u007f'
+}
+
 class Terminal {
 	constructor( options ) {
 		this.command = options.command;
@@ -9,12 +43,15 @@ class Terminal {
 		this.prefix = options.prefix || '';
 		this.tabAutoComplete = options.tabAutoComplete || false;
 
+		this.escapeCodes = escapeCodes;
+
 		this.input.setRawMode( true );
 		this.input.setEncoding( 'utf8' );
 
 		this.historyIterator = 0;
 		this.inputHistory = [ ];
 
+		this.inputOverride = undefined;
 		this.lastSuggestion = undefined;
 		this.currentInput = '';
 		this.cursorIndex = 0;
@@ -23,12 +60,13 @@ class Terminal {
 
 		this.write = this.write.bind( this );
 		this.processInput = this.processInput.bind( this );
+		this.question = this.question.bind( this );
 	}
 	clearInput = ( ) => {
-		this.output.write( '\u001b[2K\u001b[G' );
+		this.output.write( this.escapeCodes.ClearLine + this.escapeCodes.LineFeed );
 	}
 	bell( ) {
-		this.output.write( '\u0007' );
+		this.output.write( this.escapeCodes.Bell );
 	}
 	moveCursor( index ) {
 		if( this.cursorIndex < 0 || this.cursorIndex == this.currentInput.length ) {
@@ -54,18 +92,18 @@ class Terminal {
 	processInput = ( key ) => {
 		switch( key ) {
 			// Enter
-			case '\n':
-			case '\r':
+			case this.escapeCodes.NewLine:
+			case this.escapeCodes.ResetBasic:
 				this.historyIterator = 0;
 				this.write( this.currentInput );
-				const save = this.command( this.currentInput );
+				const receiver = this.inputOverride || this.command;
+				const save = receiver( this.currentInput );
 				if( save != false ) this.inputHistory.push( this.currentInput ); 
 				this.currentInput = '';
 				this.cursorIndex = 0;
 				this.clearInput( );
 				break;
-			// Arrow up
-			case '\u001b[A': {
+			case this.escapeCodes.ArrowUp: {
 				this.historyIterator++;
 				if( this.historyIterator > this.inputHistory.length ) {
 					this.historyIterator--;
@@ -79,8 +117,7 @@ class Terminal {
 				this.cursorIndex = previousCommand.length;
 				break;
 			}
-			// Arrow down
-			case '\u001b[B': {
+			case this.escapeCodes.ArrowDown: {
 				this.clearInput( );
 				this.historyIterator--;
 				if( this.historyIterator < 0 ) {
@@ -96,30 +133,27 @@ class Terminal {
 				this.cursorIndex = previousCommand.length;
 				break;
 			}
-			// Arrow right
-			case '\u001b[C':
+			case this.escapeCodes.ArrowRight:
 				this.moveCursor( this.currentInput + 1 );
 				break;
-			// Arrow left
-			case '\u001b[D':
+			case this.escapeCodes.ArrowLeft:
 				this.moveCursor( this.currentInput - 1 );
 				break;
 			// Backspace
-			case '\u0008':
-			case '\u007f':
+			case this.escapeCodes.Backspace:
+			case this.escapeCodes.Delete:
 				if( this.cursorIndex > 0 ) {
 					this.cursorIndex--;
 					this.output.write(`\u001b[${ this.cursorIndex + 1 }G`);
 					this.currentInput = this.currentInput.slice( 0, -1 );
-					this.output.write( '\u001b[2K\u001b[G' );
+					this.clearInput( );
 					this.output.write( this.currentInput );
 					if( this.cursorIndex != 0 ) this.completions( );
 				} else {
 					this.bell( );
 				}
 				break;
-			// Ctrl+C
-			case '\u0003':
+			case this.escapeCodes.ControlC:
 				if( !this.close ) {
 					this.output.write( '\n' );
 					process.exit( );
@@ -127,27 +161,31 @@ class Terminal {
 					this.close( );
 				}
 				break;
-			// Ctrl+S
-			case '\u0013':
+			case this.escapeCodes.ControlS:
 				if( this.save ) this.save( );
 				break;
-			// Tab
-			case '\t':
+			case this.escapeCodes.Tab:
 				if( !this.tabAutoComplete || !this.lastSuggestion ) return;
 				this.currentInput += this.lastSuggestion;
 				this.output.write( this.lastSuggestion );
 				this.moveCursor( this.cursorIndex + this.lastSuggestion.length );
-				this.lastSuggestion = undefiend;
 				break;
 			default:
 				this.output.write( key );
-				this.output.write( '\u001b[G' );
+				this.output.write( this.escapeCodes.LineFeed );
 				this.currentInput = this.currentInput.slice( 0, this.cursorIndex ) + key + this.currentInput.slice( this.cursorIndex );
 				this.output.write( this.currentInput );
 				this.cursorIndex++;
 				this.output.write(`\u001b[${ this.cursorIndex + 1 }G`);
 				this.completions( );
 				break;
+		}
+	}
+	// Overrides default input behavior
+	question = callback => {
+		this.inputOverride = input => {
+			callback( input );
+			this.inputOverride = undefined;
 		}
 	}
 }
