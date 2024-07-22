@@ -3,7 +3,7 @@ A NodeJS module providing features of a traditional terminal for applications
 
 # Usage
 
-`js
+```js
 const Terminal = require( './node-term.js' );
 const terminal = new Terminal( {
   command: input => {} // Command event
@@ -16,4 +16,4 @@ const terminal = new Terminal( {
   },
   tabAutoComplete: true // When a suggestion is correct, just press tab to auto-complete
 } );
-`
+```
