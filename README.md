@@ -1,6 +1,26 @@
 # node-term
 A NodeJS module providing features of a traditional terminal for applications
 
+### What is `node-term`?
+
+Developed as a part of a bigger project, `node-term` aims to provide terminal-like behavior for you applications.
+
+Many apps require some level of user input and often provide very limited experience, which is what `node-term` was designed for.
+
+### Features
+
+#### Command history
+
+Allows the user to browse previously executed commands using `Arrow Up` and `Arrow Down` keys.
+
+#### Suggestions & auto-completion
+
+When command syntax gets a little more complicated, suggestions come to the rescue. The user is provided with a ghost text suggesting how they should continue writing their commands. If the suggestion is somewhat larger, or just out of pure laziness, the user can press `Tab` to have the suggested command automatically typed in for them.
+
+#### Audio clues
+
+When an incorrect input is provided the `ASCII Bell` character is sent, which often triggers and audio clue to get the user's attention.
+
 # Usage
 
 ```js
