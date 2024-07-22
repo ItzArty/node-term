@@ -21,6 +21,10 @@ When command syntax gets a little more complicated, suggestions come to the resc
 
 When an incorrect input is provided the `ASCII Bell` character is sent, which often triggers and audio clue to get the user's attention.
 
+#### Input override
+
+Whenever you need specific input from the user, you can override the default input behavior and get the input directly
+
 # Usage
 
 ```js
@@ -38,7 +42,7 @@ const terminal = new Terminal( {
 
 # Documentation
 
-## Options
+## Constructor options
 
 ### `command( currentInput : string ) : boolean` *mandatory*
 
@@ -64,3 +68,15 @@ const terminal = new Terminal( {
 
 * Defaults to `false`
 * When set to `true`, user may press the `Tab` key to have the last suggested input auto-completed for them
+
+## Methods
+
+### `write( string : string ) : undefined`
+
+* Writes text to the terminal
+* Should be used to prevent CL & RF inconsistencies
+
+### `question( callback : function ) : undefined`
+
+* Overrides default input behavior
+* Callback is called once `Enter` key pressed, carrying the user's input
