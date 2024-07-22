@@ -133,10 +133,11 @@ class Terminal {
 				break;
 			// Tab
 			case '\t':
-				if( !this.tabAutoComplete ) return;
+				if( !this.tabAutoComplete || !this.lastSuggestion ) return;
 				this.currentInput += this.lastSuggestion;
 				this.output.write( this.lastSuggestion );
 				this.moveCursor( this.cursorIndex + this.lastSuggestion.length );
+				this.lastSuggestion = undefiend;
 				break;
 			default:
 				this.output.write( key );
