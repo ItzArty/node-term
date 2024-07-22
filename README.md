@@ -40,7 +40,7 @@ const terminal = new Terminal( {
 * `input` carries the user's current input
 * `suggest` is a callback function expecting a string with the suggested input
 
-### `tabAutoComplete : boolean`
+### `tabAutoComplete : boolean` *optional*
 
-* `false` by default
+* Defaults to `false`
 * When set to `true`, user may press the `Tab` key to have the last suggested input auto-completed for them
